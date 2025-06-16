@@ -21,7 +21,6 @@ public class Orgn_Mobile_version_TEST extends JFrame {
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm a");
     private final Stack<Object[]> deletedStack = new Stack<>();
     private int warnAtQuantity = 5;
-    private boolean isDarkTheme = false;
     private static final String HISTORY_FILE = "history.txt";
     private static final String STOCK_FILE = "stocks.txt";
     private final int closeBtnWidth = 90, closeBtnHeight = 31;
@@ -38,6 +37,7 @@ public class Orgn_Mobile_version_TEST extends JFrame {
     private final JTextField categoryField;
 
     public Orgn_Mobile_version_TEST() {
+        this.alertArea = new JTextArea();
         // Load close icon (use a placeholder if not found)
         try {
             closeIcon = new ImageIcon(
@@ -277,10 +277,9 @@ public class Orgn_Mobile_version_TEST extends JFrame {
         warnAmountLabel.setFont(warnAmountLabel.getFont().deriveFont(16f));
         warnAmountLabel.setHorizontalAlignment(JLabel.LEFT);
 
-        alertArea = new JTextArea(10, 45);
-        alertArea.setFont(alertArea.getFont().deriveFont(16f));
+        // Configure the alertPane
         alertArea.setEditable(false);
-        alertArea.setText("");
+        alertArea.setFont(alertArea.getFont().deriveFont(16f));
         JScrollPane alertScrollPane = new JScrollPane(alertArea);
         alertScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         alertPanel.add(alertScrollPane, BorderLayout.CENTER);
@@ -813,8 +812,8 @@ public class Orgn_Mobile_version_TEST extends JFrame {
 
     private void openThemeSelectionFrame(JFrame parent) {
         JFrame themeFrame = new JFrame("Theme Selection");
-        themeFrame.setSize(320, 220);
-        themeFrame.setMinimumSize(new Dimension(280, 180));
+        themeFrame.setSize(320, 300);
+        themeFrame.setMinimumSize(new Dimension(280, 200));
         themeFrame.setLocationRelativeTo(parent);
         themeFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -830,34 +829,46 @@ public class Orgn_Mobile_version_TEST extends JFrame {
 
         JButton darkBtn = new JButton("Dark Theme");
         JButton lightBtn = new JButton("Light Theme");
+        JButton customColorBtn = new JButton("Custom Color");
+        JButton defaultColorBtn = new JButton("Default Color");
         darkBtn.setAlignmentX(CENTER_ALIGNMENT);
         lightBtn.setAlignmentX(CENTER_ALIGNMENT);
+        customColorBtn.setAlignmentX(CENTER_ALIGNMENT);
+        defaultColorBtn.setAlignmentX(CENTER_ALIGNMENT);
         darkBtn.setMaximumSize(new Dimension(160, 36));
         lightBtn.setMaximumSize(new Dimension(160, 36));
+        customColorBtn.setMaximumSize(new Dimension(160, 36));
+        defaultColorBtn.setMaximumSize(new Dimension(160, 36));
         panel.add(darkBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 10)));
         panel.add(lightBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(customColorBtn);
+        panel.add(Box.createRigidArea(new Dimension(0, 10)));
+        panel.add(defaultColorBtn);
         panel.add(Box.createRigidArea(new Dimension(0, 24)));
 
-        JButton themeCloseBtn = new JButton(closeIcon);
-        themeCloseBtn.setToolTipText("Close");
-        themeCloseBtn.setPreferredSize(new Dimension(closeBtnWidth, closeBtnHeight));
-        themeCloseBtn.setMaximumSize(new Dimension(closeBtnWidth, closeBtnHeight));
-        themeCloseBtn.setMinimumSize(new Dimension(closeBtnWidth, closeBtnHeight));
+        JButton themeCloseBtn = new JButton("Close");
         themeCloseBtn.setAlignmentX(CENTER_ALIGNMENT);
-        themeCloseBtn.setBorderPainted(false);
-        themeCloseBtn.setFocusPainted(false);
-        themeCloseBtn.setContentAreaFilled(false);
         panel.add(themeCloseBtn);
 
+        // Action Listeners for Theme Buttons
         darkBtn.addActionListener(_ -> {
-            isDarkTheme = true;
-            applyTheme();
+            applyTheme(java.awt.Color.DARK_GRAY, java.awt.Color.WHITE); // Dark theme
             themeFrame.dispose();
         });
         lightBtn.addActionListener(_ -> {
-            isDarkTheme = false;
-            applyTheme();
+            applyTheme(java.awt.Color.decode("#fdaa48"), java.awt.Color.BLACK); // Light orange theme
+            themeFrame.dispose();
+        });
+        customColorBtn.addActionListener(_ -> {
+            java.awt.Color selectedColor = JColorChooser.showDialog(themeFrame, "Choose Background Color", getBackground());
+            if (selectedColor != null) {
+                applyTheme(selectedColor, java.awt.Color.BLACK); // Custom color with black text
+            }
+        });
+        defaultColorBtn.addActionListener(_ -> {
+            applyTheme(java.awt.Color.WHITE, java.awt.Color.BLACK); // Default theme
             themeFrame.dispose();
         });
         themeCloseBtn.addActionListener(_ -> themeFrame.dispose());
@@ -866,19 +877,10 @@ public class Orgn_Mobile_version_TEST extends JFrame {
         themeFrame.setVisible(true);
     }
 
-    private void applyTheme() {
-        java.awt.Color bg, fg;
-        if (isDarkTheme) {
-            bg = java.awt.Color.DARK_GRAY;
-            fg = java.awt.Color.WHITE;
-        } else {
-            bg = java.awt.Color.WHITE;
-            fg = java.awt.Color.BLACK;
-        }
-        setBackground(bg);
+    private void applyTheme(java.awt.Color bg, java.awt.Color fg) {
+        getContentPane().setBackground(bg);
         for (java.awt.Component comp : getContentPane().getComponents()) {
             setComponentTheme(comp, bg, fg);
-            setTitledBorderColor(comp, fg);
         }
         repaint();
     }
@@ -895,13 +897,13 @@ public class Orgn_Mobile_version_TEST extends JFrame {
         if (comp instanceof JPanel jPanel) {
             for (java.awt.Component child : jPanel.getComponents()) {
                 setComponentTheme(child, bg, fg);
-                setTitledBorderColor(child, fg);
             }
         }
         if (comp instanceof JScrollPane jScrollPane) {
             java.awt.Component view = jScrollPane.getViewport().getView();
-            if (view != null)
+            if (view != null) {
                 setComponentTheme(view, bg, fg);
+            }
         }
         if (comp instanceof JTable jTable) {
             jTable.setForeground(fg);
@@ -912,17 +914,6 @@ public class Orgn_Mobile_version_TEST extends JFrame {
         if (comp instanceof JTextArea jTextArea) {
             jTextArea.setForeground(fg);
             jTextArea.setBackground(bg);
-        }
-    }
-
-    private void setTitledBorderColor(java.awt.Component comp, java.awt.Color fg) {
-        if (comp instanceof JPanel jPanel && jPanel.getBorder() instanceof javax.swing.border.TitledBorder tb) {
-            tb.setTitleColor(fg);
-        }
-        if (comp instanceof JPanel jPanel) {
-            for (java.awt.Component child : jPanel.getComponents()) {
-                setTitledBorderColor(child, fg);
-            }
         }
     }
 
@@ -1034,11 +1025,16 @@ public class Orgn_Mobile_version_TEST extends JFrame {
                 // Filter records for selected date
                 filteredRecords.clear();
                 for (String[] row : historyList) {
-                    String dateOnly = row[3].split(" ")[0];
+                    String dateOnly = row[4].split(" ")[0]; // Extract only the date part from the history entry
                     if (dateOnly.equals(selectedDate)) {
-                        filteredRecords.add(new String[] { row[0], row[1], row[2], row[3] });
+                        filteredRecords.add(row);
                     }
                 }
+
+                if (filteredRecords.isEmpty()) {
+                    JOptionPane.showMessageDialog(historyFrame, "No records found for the selected date: " + selectedDate, "No Records", JOptionPane.INFORMATION_MESSAGE);
+                }
+
                 reloadTable.run();
                 dateFrame.dispose();
             });
@@ -1222,5 +1218,16 @@ public class Orgn_Mobile_version_TEST extends JFrame {
     //     // ... setup frame ...
     //     fadeInFrame(newFrame);
     // });
+
+    private void appendToAlertPane(String message, java.awt.Color color) {
+        StyledDocument doc = alertPane.getStyledDocument();
+        Style style = alertPane.addStyle("Style", null);
+        StyleConstants.setForeground(style, color);
+        try {
+            doc.insertString(doc.getLength(), (doc.getLength() > 0 ? "\n" : "") + message, style);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+    }
 
 }
